@@ -1,0 +1,226 @@
+ASP.NET 5 : First Look
+
+.NET 4.6 - full version
+.NET Core - cross platform 
+CoreCLR - subset of .net framework
+
+1. Installing CLR Core
+	dnvm list - list all clr versions
+	dnvm upgrade
+	dnvm install 1.0.0-rc1-final -arch x64
+	dnvm install 1.0.0-rc1-final -r coreclr -arch x86 -p
+	dnx --version 
+	dnvm alias default 1.0.0-rc1-final -a x64 -r clr => set alias to this version of clr
+
+Simple Hello World Program using VS Code
+	Program.cs:
+	public class program
+	{
+		public static void Main() {
+			System.Console.WriteLine("Hello World!");
+		}
+	}
+
+	project.json:
+	{
+		"frameworks": {
+			"dnx451":{}
+		}
+	}
+
+2. Creating Empty MVC6 Temlate
+    app.UseDefaultFiles();   // will look for index.html, default.html
+    app.UseStaticFiles();    // server index.html file - NuGet package is needed
+
+3. Html
+	Bower - tool for JavaScript, client side package (like NuGet for .net)
+		- .bowerrc - config file where packages from Bower will be installed
+
+		"dependencies": {
+			"underscore": "~1.8.3",
+			"jquery" : "~2.1.4"
+		}
+
+1. File based project system
+	- Roslin - new complier. No need to build/rebuild
+	- New default folder structure
+	- CLR wrapped in a NuGet package
+	- Unification => MVC 6 = (Asp.Net MVC + Web API)
+		this means one set of base controllers for mvc and api, one set of model binders etc, less duplication
+		no System.Web
+	- file system is a project. Old way you had to add it in VS (new files etc)
+	- Dynamic compilation - on the fly
+
+	HttpContext - created each time HTTP request or response is created
+		- holds information like: Request, Response, Server, Session, Item, Cache, User's information, Authentication etc
+
+	'~' - root of the project folder
+
+	a. Startup.cs - (old Global.asax file)
+	b. project.json (old packages file) - manages website characteristics
+		"webroot" - this is where you specify the / "root" of the project, specifies nuget assemblies etc
+		- this simplifies dependencies, can be edited in notepad
+		- everything is a package (NuGet) - My be edited in text or edited in notepad
+
+	c. Packages/Runtimes:
+		ASP.NET - full .net framework
+		ASP.NET Core 5 - web optimized CLR/framework
+
+		"frameworks": { "asp.net50": {}, "asp.net.core50": {} } // can be commented out. May be build against a specific framwork
+		// by default your app is built against both framworks
+
+		Users\User.Name\.k\packages\ (old packages folder) - old folder no longer exists. This stores all packages for an application
+
+2. wwwroot Folder - root of the mvc site project is no longer the project root but wwwroot folder
+	- folder for static assets (css, js, libs etc)
+	- seperation of concerns between files that contain logic and www files
+
+	
+3. Building MVC 6 Application
+	- MVC6 no longer depends on System.Web
+
+	HTTP Pipeline - OWIN specification middleware (how to work on request and response)
+		- how you configure application to behave, what frameworks it is going to use etc (this is middleware)
+
+	a. Set up middleware => Startup.cs
+		- Whenever you want to add new middleware, you define a new dependency in project.json and add it to Startup.cs class
+
+		public class Startup
+		{
+			// This is before Configure() method
+			public void ConfigureServices(IServiceCollection services) // Configure services that will be availabe through app
+			{
+				// Add MVC6 service to services collection, then configure it and start using it in Configure()
+				services.AddMvc();
+			}
+			public void Configure(IApplicationBuilder app) // Configure middleware
+			{
+				// Start using MVC6 - when choosing Blank app template
+				app.UseMvc(); // Microsoft.AspNet.Mvc package
+
+				// TAKE TWO - Setting up routing
+				// By default HomeController is index page, if you want it changed
+				app.UseMvc(routes => routes.MapRoute("default", "{controller=Home}/{action=Default}")) // Default controller = Home, Action=Default
+
+				// Every request that comes in to app, will response with Hello World!
+				app.Run(async ctx => await ctx.Response.WriteAsync("Hello World!"));
+
+				// Package added via NuGet in project.json / dependencies: { ... }  // Microsoft.AspNet.Diagnostics package
+				// Using extension methods to call this new package method - new Middleware
+				app.UseWelcomePage();
+			}
+		}
+
+	b. Attribute Routing
+		[Route("/[Home]") // Map Home to this controller
+		[Route("/[controller]"), Route("/")] // Root of the folder
+		public class HomeController : Controller
+		{
+			[Route("[action]")] // Default action called Default
+			public IActionResult Default(){
+				return Content("Hello from a controller!");
+			}
+		}
+
+	c. Razor Views
+		public class HomeController : Controller
+		{
+			public IActionResult Home(){
+				return View(); // Views folder needs to exist with Home.cshtml
+			}
+		}
+
+	d. Injecting Service
+		public class HomeController : Controller
+		{
+			// Need to configure in Start up file
+			IGreetingService _greeter; // Some arbitrary service
+
+			public HomeController(IGreetingService greeter){
+				_greeter = greeter;
+			}
+
+			public IActionResult Home(){
+				var greeting = _greeter.SomeMethod();
+				return View(greeting); // Views folder needs to exist with Home.cshtml
+			}
+		}
+
+		// Startup.cs
+		// Use this method to initialize IoC, configure containers etc
+		public void ConfigureServices(IServiceCollection services) 
+		{
+			services.AddMvc();
+
+			// Configure IoC. Whoever needs instance of IGreeting service, give them new GreetingService
+			services.AddInstance<IGreetingService>(new GreetingService)  // Singleton // AddTriansient etc
+		}
+
+	e. Configuration System
+		// For this to work you need NuGet package Microsoft.Framework.ConfigurationModel.Json in project.json
+		config.json - you can specify your own configuration
+			{
+				"message" : "This is configurable text!"
+			}
+
+		public class Startup
+		{
+			public Startup(){
+				Configuration = new Configuration().AddJsonFile("config.json"); // No more .config transformations
+			}
+
+			public IConfiguration Configuration { get; set; } // May be now used in any file IConfiguration _config.Get("key")
+
+			public void ConfigureServices(IServiceCollection services) 
+			{
+				services.AddMvc();
+				services.AddTriansient<IGreetingService>(p => new GreetingService(IConfiguration)) //Lambda
+			}
+			public void Configure(IApplicationBuilder app) 
+			{
+				app.UseMvc();
+			}
+		}
+
+4. Web Api
+	- Microsoft.AspNet.Mvc includes MVC + API packages
+
+		// May service View or API result
+		[Route("api/[controller]")]
+		public class Greetings : Controller // Controller base class handles both MVC + API
+		{
+			IGreetingService _greeter; 
+
+			public Greetings(IGreetingService greeter){
+				_greeter = greeter;
+			}
+
+			[HttpGet]
+			public IEnumerable<string> Get(){
+				return new string[] { "value1", "value2" };
+			}
+		}
+
+
+5. Node.js - javascript execution engine. You can run javascript with node
+	a. node => ex. node test.js => will run script in test.js
+	b. npm => package manager for node.js, install various libraries, utilities for node.js
+		> npm install bower -g // -g means global install so it can be used within any location of command prompt
+	c. bower => manager/installer of packages for front end development, libraries, things you will place in a browser
+		- installs frameworks like jquery, bootstrap etc
+	d. grunt => tool for getting jquery, custom js files in wwwroot static content folder, also compiles. Concat and Minify scripts
+
+	- you can add Bower json configuration file from templates of Visual Studio. It places them in bower_components
+	- bower.config - configure where these libraries are downloaded to
+
+		"dependencies": {
+			"jquery": "~2.1.3"
+		} 
+
+		Or command line
+		> bower install jquery --save
+
+6. KPM - deployer (k project manager)
+	- bundle application for deployment
+
+	> C:\dev\Messanger\

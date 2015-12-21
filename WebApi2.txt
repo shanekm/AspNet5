@@ -1,0 +1,52 @@
+Web Api 2
+
+1. Help Page under Areas/HelpPage
+	- using xml summary tags to add info to Help Pages
+
+2. Routing with Attributes
+	- used directly on the Action, easy to define route
+	- can use contraints
+	- multiple routes per Action
+	- can be used at Controller level
+
+	class WebApiConfig.cs
+		// Web Api routes for Attributes
+		config.MapHttpAttributeRoutes(); // before any default
+
+		config.Routes.MapHttpRoute(
+			name: "DefaultApi",
+			routeTemplate: //etc
+		)
+
+	Controller:
+		[Route(api/patients/{id}/medications)]
+
+3. IHttpActionResult
+	- type can be returned from  Api controller
+	- methods: ExecuteAsync
+	- contains results:
+		a. OkResult()
+		b. UnauthorizedResult()
+		c. NotFoundResult()
+		d. ExceptionResult()
+		e. BadRequestResult()
+		f. ConflictResult()
+		g. RedirectResult()
+
+	Using IHttpActionResult
+		- allows for easier Unit testing (check result type)
+
+	public IHttpActionResult Get(string id){
+		var patient = _patients.GetById(id);
+		if (patient == null)
+		{
+			return NotFound();
+		}
+
+		return Ok(patient); // serialize patient
+	}
+
+	Javascript:
+		$post(url, data).always(showResponse); // dump response to browswer - for debugging
+
+

@@ -1,0 +1,34 @@
+Entity Framework 6
+
+1. Creating Context
+	a. create Books.cs class
+	b. in MVC project DataContext/BooksDb : DbContext (any db class inherits from DbContext to make it work with EF)
+
+	public class BooksDb : DbContext
+	{
+		public BooksDb(): base("DefaultConnection"){
+		}
+		public DbSet<Book> Books {get; set;} // DbSet<Book> - maps to a table in EF
+	}
+
+2. Calling Async
+
+	static async Task<int> SomeMethod(){
+		var result = await ServiceCallAsync();  // await - says wait till finished calling service
+		return result;							// then convert Task into actual books
+	}
+
+	MVC Controller:
+	public ActionResult Index(){
+		return View(db.Books.ToListAsync()); // error - will return Task
+	} 
+
+	// Correct - Async controller
+	public async Task<ActionResult> Index(){
+		return View(await db.Books.ToListAsync());
+	}
+	
+3. Glimpse NuGet package
+	- for viewing behind the scenes of EF
+	Glimpse MVC package
+	Glimpse EF6

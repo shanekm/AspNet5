@@ -1,0 +1,5 @@
+E:\Dot.Net\AspNet5\Books.Entities\bin\Debug\Books.Entities.dll
+E:\Dot.Net\AspNet5\Books.Entities\bin\Debug\Books.Entities.pdb
+E:\Dot.Net\AspNet5\Books.Entities\obj\Debug\Books.Entities.csprojResolveAssemblyReference.cache
+E:\Dot.Net\AspNet5\Books.Entities\obj\Debug\Books.Entities.dll
+E:\Dot.Net\AspNet5\Books.Entities\obj\Debug\Books.Entities.pdb

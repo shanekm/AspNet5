@@ -1,0 +1,44 @@
+Identity Types
+	- No Authentication
+	- Individual User Accounts (old Forms authentication) username + hashed password stored in SQL
+		(also option for Google, Facebook accounts etc)
+	- Organizational - active directory, Azure etc
+	- Windows - intranet, active directory
+
+1. Views & Controllers:
+	Request.IsAuthenticated - to check for authentication
+	User.Identity.Name
+	[Authorize] attribute - to restrict access
+	[AllowAnonymous] - overwrite for Action if [Authorize] is used on a controller 
+	IMPORTANT - HttpContext.GetOwinContext().Authentication - all info with Owin dictionary envirenment vars and external login info
+
+2. Database
+	App_Data - generated DB for storing user credentials
+
+	To change DB name:
+		web.config - configured to use "DefaultConnection", change web.config settings for "DefaultConnection"
+		- will have to register again
+		- when removing .mdf db files, remove it from SQL server as well and restart SQL server
+
+3. Core Identity
+	Microsoft.AspNet.Identity.Core - .net assembly defines Identity (IUser, IRole)
+	Abstractions for custom Identity store
+		IUserStore<TUser> => Create user, Find etc
+		IUserLoginStore<TUser> => AddLogin, GetLogin etc
+		IUserPasswordStore<TUser> => GetPasswordHash, HasPasswordHash etc
+	UserManager<TUser> => implements IUserStore - validator, provides domain model for managing users stores
+
+	ex. If you want to implement RavenDB etc, implement IUserStore interface
+
+	Microsoft.AspNet.Identity.EntityFramework - implementation for Entity Framework
+		IdentityUser, IdentityRole, UserStore<TUser>, IdentityDbContext<TUser>
+
+
+	public class ApplicationUser : IdentityUser {
+		public string FavoriteBook {get; set;} // any custom/additional user info you wish to add
+	}
+
+4. External Authentication
+	OpenID, OAuth
+	Adventages - one single login for multiple pages
+	- need to register with ie. Facebook, this will generate public/private key that you will need to plug in to MVC app

@@ -1,0 +1,83 @@
+HTTP Pipeline
+
+	HTTP request cycle
+	1. IIS receives a request for an ASP.NET page (.aspx)
+	2. Request is dispatched to PageHandlerFactory (class) by IIS (handler associated with .aspx) => w3wp.exe - ASP.NET worker process
+		ASP.NET worker process (does all below)
+		a. hander factory gets .aspx file from the disk
+		b. .aspx file gets compiled into assembly (dll)
+		c. assembly droped onto a disk and loaded into memory
+		d. IHTTP hanlder invokes newly created assembly/class (dll) file
+
+		What happends after IIS hands over to ASP.NET HTTP Hanlder?
+			- AppDomain - where Asp.net manages request dispatching. 
+				Each asp.net application has AppDomain associated with it, within the worker process (isolation between different asp.net applications)
+			1. HttpRuntime - dispaches request when it comes in and creates HttpWorkerRequest
+				a. HttpRuntime - creates HttpWorkerRequest to process request 
+				b. HttpWorkerRequest - creates HttpContext class for each request (access to request, response, sessionstate, applicationstate info)
+			2. HttpApplicationFactory - creates instance of HttpApplication class
+				a. HttpApplication : IHttpAsyncHandler - will locate approperiate factory that is able to process this request 
+					- Modules : IHttpModule - can be intercepted to manipulate request (security, authentication, autherization etc)
+					- things you want happen outside of request cycle for all requests coming into application
+			3. Handler : IHttpHandler
+
+		Summary (3 ways to extend this cycle/pipeline)
+			1. HttpApplication - build a class that derives from HttpApplication (overwrite events etc)
+			2. Modules - build your own modules and attach them to application class
+			3. HttpHandler - build your own handlers
+				
+		HttpContext - created each time HTTP request or response is created
+			- holds information like: Request, Response, Server, Session, Item, Cache, User's information, Authentication etc
+			Properties:
+				Current (static) - current HTTPContext object in current thread
+				Application - application wide property
+				ApplicationInstance - Global.asax objects properties
+				Session
+				Request/Response - manipulate quieries, cookies, params etc
+				User - IPrinciple - who has made this request?
+				Hanlder - IHttpHandler object
+				Items - dictionary
+				Server - server utility class
+				Error - exceptions that may have occurred
+
+				Example: HttpContext.Current.Response.Write("From http context helper");
+
+	A. HttpApplication (Global.asax) - applications - by creating file Global.asax placed at the top-level of virtual directory
+		- initial entry point for request (useful for preprocessing)
+		- accessible from HttpContext and page classes
+		- initializing data shared across multiple pages, authentication, security, logging, error messages
+			accessible (application state, cache, session state, HttpContext, modules, session, User)
+		Methods (you may overwrite): Init(), CompleteRequest()
+		Events: BeginRequest(), AuthenticateRequest(), AuthorizeRequest(), ... other..., EndRequest(), Disposed, Error
+
+	B. Handlers : IHttpHanlder (must implement)
+		- each .aspx file creates a page class, which is hanlder
+		
+		<a href="data.csv">get data</a> => create a handler that gets csv file
+		- map this to CsvHanlder class and invoke ProcessRequest() method 
+		- mapping => web.config OR in IIS Handler Mapping 
+		<system.webServer>
+			<handlers>
+				<add verb="GET" path="data.csv" type="AssemblyName.CustomCsvHandler" />
+			</handlers>
+		</system.webServer>	
+
+	C. Modules : IHttpModule
+		- equivelent to custom applications (you can everything in global.asax that you can do in module and vice-versa)
+		- exist at application level (not per request)
+		Init(), Dispose();
+
+		public interface IHttpModule{
+			void Dispose();
+			void Init(HttpApplication context) // Use this to hook up custom functionality / event handlers etc
+		}
+		- mapping => web.config OR in IIS Module Mapping 
+		<system.webServer>
+			<modules>
+				<add name="CustomTimerModule" type="AssemblyName.CustomTimerModule, ExternalAssemblyName" /> // external assembly is not needed if in same assembly
+			</modules>
+		</system.webServer>
+
+		Why use modules instead of HttpApplication(Global.asax)?
+			- modules can be deployed at the machine level
+			- modules can be deployed independently as its own assembly

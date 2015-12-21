@@ -1,0 +1,101 @@
+Understanding OWIN and Katana
+
+OWIN - Open Web Interface for .NET
+	- defines standard interface between .net web servers and web applications
+	- specification, that defines how you can abstract away a web server from application
+	- makes possible to abstract away HOW the web site will be hosted but can focus on building the web site
+
+	System.Web - MVC needs this .dll for it work, dll contains lots of functionality (caching, hosting, routing etc)
+	Owin + Katana - breaks this in to modules and you only use those that you need 
+
+	Why OWIN 
+		- most .net website depended on IIS (.net + Web != IIS)
+		- allows to build web applications that can be hosted on different platforms
+
+	How do you abstract?
+		// Passing in IDictionary, returning Task
+		using AppFunc = Func<IDictionary<string, object>, Task>;
+		var f = new AppFunc(env => {
+			return Task.FromResult(null); // return Task
+		})
+
+	Parts (Owin specifications)
+		- Process and parts involved when running application using Owin specification
+
+		1. Host - some process.exe, that processes .net application
+		2. Server - passes request to appliation using AppFunc to middleware
+		3. Middleware (Pipeline) - To and From middleware. These are not dependent on IIS
+		4. Application - responsible for generating response and send it back to client
+
+	Process/Flow:
+		a. Client(browser) => request sent to Server
+		b. Server takes incoming HTTP request, parses it and puts them into Dictionary, creates headers etc => 
+			Server then passes Envirenment Dictionary to first Pipeline (Middleware) using AppFunc
+			Uses return Task to signal if it's done with processing
+		c. Middleware inspects Dictionary and makes whatever changes, or executes whatever other functionlity is specified in Dictionary
+			Other Middleware is processed if any other specified
+		d. Middleware passes process to Application
+			Application generates response. Sets any response headers etc. Crafts HTTP response message
+		e. Server responds to browser. Closes connection
+
+
+2. Owin "Envirenment" Dictionary Keys (standard) - contain info about request
+	owin.RequestPath(string) // specifies request url
+	owin.RequestBody(Stream) 
+	owin.ResponseStatusCode(int) etc
+
+3. Building OWIN Pipeline
+    app.Use(
+        async (ctx, next) =>
+        {
+            // ctx.Response => owin.ResponseBody(string) key
+            await ctx.Response.WriteAsync("Hello World");
+			// await next();
+        });
+
+4. AppFunc - application function - how components process and interact with server
+	Func<IDictionary<string, object>, Task> - similar to HttpContext class, returns a task
+		- Task because you process/send request and don't wait for response and don't block UI etc.
+	
+	C1 => next => My Component => next => C2 => etc
+
+	// Host - WebApp checks the configuration within Startup.cs class
+    // Configuration() method
+    using (WebApp.Start<Startup>(uri)) 
+    {
+        Console.WriteLine("Host started!");
+        Console.ReadKey(); // stop on readkey
+    }
+
+5. Owin Component - also known as Middleware - to write your own need to match the following
+
+	// Func signature method
+	// Constructor needed with Envirenment next variables
+	public async Task Invoke(IDictionary<string, object> envirenment){
+		// processing
+		await _nextComponent(envirenment);
+		// processing
+	}
+
+	IMPORTANT - not every component has be a class, app.Run(env => {}) is sufficient
+		- no need to create above, it will get plugged in to the pipeline
+
+	app.Run() - Katana method build on top of Owin that allows to plug in stuff to the pipeline without
+		- writing above Func<> signature class etc. No need to worry about next etc
+		- Katana takes care of all the for you
+
+6. Adding Web Api to Owin Pipeline - Greeting.cs
+
+	Startup.cs {
+		ConfigureWebApi(app);
+	}
+
+	private void ConfigureWebApi(IAppBuilder app)
+    {
+        var config = new HttpConfiguration();
+        config.Routes.MapHttpRoute("DefaultApiRoute",
+            "api/{controller}/{id}",
+            new {id = RouteParameter.Optional});
+
+        app.UseWebApi(config); // Plug in WebApi component to Owin pipeline
+    }
