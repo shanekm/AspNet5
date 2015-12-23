@@ -14,8 +14,18 @@ namespace HelloWorldMvc6.Controllers.Web
         [HttpPost]
         public IActionResult Contact(ContactViewModel model)
         {
-            // get configuration
-            var email = Startup.Configuration["SiteAdminEmail"];
+            if (ModelState.IsValid)
+            {
+                // get configuration
+                var email = Startup.Configuration["SiteAdminEmail"];
+            }
+
+            // Adding modelstate errors
+            if (string.IsNullOrEmpty(model.Email))
+                ModelState.AddModelError("", "added message");
+
+            // Clear form and state and Form
+            ModelState.Clear();
 
             return View();
         }
