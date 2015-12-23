@@ -1,0 +1,26 @@
+﻿<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>@ViewBag.Title</title>
+</head>
+<body>
+<div>
+    ==Layout start==
+
+    <a asp-controller="app" asp-action="about">About</a>
+    <a asp-controller="app" asp-action="index">Index</a>
+    <a asp-controller="app" asp-action="contact">Contact</a>
+
+    @RenderBody()
+
+    ==Layout end==
+
+    <script src="~/lib/jquery/dist/jquery.js"></script>
+
+
+    @RenderSection("Scripts", false)
+</div>
+</body>
+</html>

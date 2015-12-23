@@ -1,0 +1,35 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+
+@model HelloWorldMvc6.ViewModels.ContactViewModel
+
+@{
+    ViewBag.Title = "Contact me";
+}
+
+@section Scripts{
+    <script src="~/lib/jquery-validation/dist/jquery.validate.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.js"></script>
+}
+<form method="POST" >
+    <div asp-validation-summary="ValidationSummary.ModelOnly"></div>
+
+    <label asp-for="Name">Name</label>
+    <input asp-for="Name"/>
+    <span asp-validation-for="Name"></span>
+    
+    <br />
+    <input type="Email" asp-for="Email"/>
+    <span asp-validation-for="Email"></span>
+    
+    <br />
+    <label>Message</label>
+    <textarea cols="40" rows="4" asp-for="Message"></textarea>
+    <span asp-validation-for="Email"></span>
+    
+    <br/>
+    <input type="submit" value="send message"/>
+</form>

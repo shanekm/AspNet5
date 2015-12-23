@@ -40,6 +40,72 @@ Simple Hello World Program using VS Code
 			"underscore": "~1.8.3",
 			"jquery" : "~2.1.4"
 		}
+        
+4. MVC
+    a. Configuring MVC with OWIN
+    - add MVC NuGet package
+        void ConfigureService vs. void Configure 
+            - ConfigureService - put it in asp.net DI container (add it to it's list of services)
+            - Configre - use MVC service
+            
+        public void ConfigureServices(IServiceCollection services)
+        {
+            app.AddMvc(); // add mvc to DI container
+        }
+
+        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+        public void Configure(IApplicationBuilder app)
+        {
+            app.UseMvc(
+                config =>
+                {
+                    config.MapRoute(name: "Default",
+                        template: "{controller}/{action}/{id?}", // ? => optional
+                        defaults: new {controller = "App", action = "Index"});
+                }); // use MVC
+           
+    b. Creating Views
+        ~ in Views => means look in Root ie: src="~/lib/script.js"
+        - add /Shared/_Layout.cshtml page 
+        - add /Shared/_ViewStart.cshtml { @Layout = "/Shared/_Layout.cshtml" } // begging view for every other View in the project
+    
+    c. Using Tag Helpers
+        - <a href="/app/about/">about</a> // wrong, if routing changes it will stop working
+        - MVC6 uses Tag Helpers 
+            <a asp-controller="App" asp-action="Index">About</a>
+            \Views\MVC View Input Page.cshtml - for tag helpers
+            _ViewInputs.chstml
+            
+        - add assembly to project.json file
+            dependencies:{
+                ...
+                "Microsoft.AspNet.Mvc.TagHelpers: 6.0.0-" => tagHelper Intallisense
+
+		View:
+		@addTagHelper "*, Microsoft.AspNet.Mvc.TagHelpers"
+		tags: asp-controller, asp-action, asp-for
+        
+	d. Validation
+		- adding jquery-validation
+		- adding jquery-validation-unobtrusive
+
+	e. Building Configuration
+		- Startup.cs, add "config.json" file
+
+		public class Startup
+		{
+			public static IConfigurationRoot Configuration;
+
+			public Startup(IApplicationEnvironment appEnv)
+			{
+				var builder = new ConfigurationBuilder()
+					.SetBasePath(appEnv.ApplicationBasePath)
+					.AddJsonFile("config.json")
+					.AddEnvironmentVariables();
+
+				Configuration = builder.Build();
+			}
+
 
 1. File based project system
 	- Roslin - new complier. No need to build/rebuild
